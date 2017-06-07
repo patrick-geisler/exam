@@ -1,78 +1,49 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
+import { getReposByUsername } from "./apiCall";
+import Search from './search';
+import PropTypes from 'prop-types';
 import {
   BrowserRouter as Router,
   Route,
-  Link,
-  Switch
+  Link
 } from 'react-router-dom'
 
-
-class Search extends Component {
-  render() {
-    const searchStyle ={
-      height: '200px',
-      width:'300px',
-      margin: "auto"
-    };
-    const box ={
-      height: '40px',
-      width:'300px',
-      marginTop: '5px'
-
-    };
-    return (
-      <div style={searchStyle}>
-        <hr/>
-        <p>Search repositories by username</p>
-        <input type='textbox' style={box} />
-        <br />
-        <button style={box} >Search</button>
-        <hr/>
-      </div>
-    );
-  }
-}
-
-const Details = (props) => {
-  return(
-          <div>
-            RepoDetails
-          </div>
-  )
-}
-
-const TableRow = (props) => {
-  return(
-          <td>
-            <Router>
-              <div>
-                <Link to="/repos:id">RepoName</Link>
-                <Route path="/repos:id" component={Details}/>
-              </div>
-            </Router>
-          </td>
-  )
-}
-
-const RepoTable = (props) => {
+const DetailList = (props) => {
   return(
     <div>
-      <table className='table'>
-        <thead>
-        <tr>
-          <th>Name</th>
-        </tr>
-      </thead>
-        <tbody>
-        <tr>
-          <TableRow />
-        </tr>
-      </tbody>
-      </table>
+      App Details
     </div>
   )
 }
+
+
+const RepoTable = (props) => {
+  const arr = props.list.repolist
+  function newarr(array){
+    let newish = []
+    for (var i = 0; i < array.length; i++) {
+      // newish.push(<li>{array[i]}</li>)
+      newish.push(<li><Link to='/reponame'>{array[i]}</Link></li>)
+    }
+    return newish
+  }
+  newarr(arr)
+  return (
+    <Router>
+    <div>
+      <ul>
+        {newarr(arr)}
+      </ul>
+      <Route exact path="/reponame" component={DetailList}/>
+    </div>
+    </Router>
+  );
+};
+
+RepoTable.propTypes = {
+  list: PropTypes.object
+};
 
 class RepoList extends Component {
   render() {
@@ -80,6 +51,7 @@ class RepoList extends Component {
       marginLeft: '20px',
       textAlign: 'center'
     };
+
     return (
       <div style={resultsBox}>
         <h2>Usernames Repos</h2>
@@ -89,23 +61,41 @@ class RepoList extends Component {
           <option value="Javascript">Javascript</option>
           <option value="Ruby">Ruby</option>
         </select>
-        <RepoTable />
+
+        <RepoTable list={this.props.state}/>
       </div>
     );
   }
 }
 
-const Home = () => {
-  return(
-          <div>
-            <Search />
-            <RepoList />
-          </div>
-  )
-}
 
+class App extends Component{
+  state = {
+    repolist: []
+  }
 
-class App extends Component {
+  handleResponse = list => {
+    this.setState({
+      repolist: list
+    })
+
+  }
+
+  handleClick = url => {
+    getReposByUsername(url)
+      .then(list =>{
+        function namelist(arr){
+          const results = arr.reduce((accum, personObj) => {
+            let name = personObj.name
+            accum[name] = true
+            return accum
+          }, {})
+        return Object.keys(results)
+        }
+        this.handleResponse(namelist(list))
+      })
+  }
+
   render() {
     const appStyle ={
       height: '1000px',
@@ -116,22 +106,11 @@ class App extends Component {
       <div className="App" style={appStyle}>
         <h1>GitHub Veiwer</h1>
         <hr />
-
-        <Router>
-          <Switch>
-            <Route path="/" component={Home}/>
-            <Route path="/home" component={Details}/>
-          </Switch>
-        </Router>
+        <Search handleClick={this.handleClick}/>
+        <RepoList state={this.state}/>
       </div>
     );
   }
 }
 
-ReactDOM.render(
-    <Router>
-      <div>
-        <Route path="/" component={App}/>
-      </div>
-    </Router>,document.getElementById('root')
-);
+export default App

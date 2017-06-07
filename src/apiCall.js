@@ -2,11 +2,11 @@ import axios from "axios"
 
 export const getReposByUsername = (username) => {
 
-  return axios.get(`https://api.github.com/users/${username}`)
+  return axios.get(`https://api.github.com/users/${username}/repos`)
     .then(response => {
       return response.data
     })
-    .catch(response => {
-      console.log('err');
+    .catch(() => {
+      return Error
     })
 };
